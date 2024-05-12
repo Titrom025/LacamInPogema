@@ -19,20 +19,18 @@ static const std::regex r_height = std::regex(R"(height\s(\d+))");
 static const std::regex r_width = std::regex(R"(width\s(\d+))");
 static const std::regex r_map = std::regex(R"(map)");
 
-Graph::Graph(const std::string &filename) : V(Vertices()), width(0), height(0)
+Graph::Graph(const std::string &map_data) : V(Vertices()), width(0), height(0)
 {
-  std::ifstream file(filename);
-  if (!file) {
-    std::cout << "file " << filename << " is not found." << std::endl;
-    return;
-  }
+  std::istringstream map_stream(map_data);
   std::string line;
   std::smatch results;
 
   // read fundamental graph parameters
-  while (getline(file, line)) {
+  while (getline(map_stream, line)) {
     // for CRLF coding
-    if (*(line.end() - 1) == 0x0d) line.pop_back();
+    if (!line.empty() && line.back() == '\r') {
+      line.pop_back();
+    }
 
     if (std::regex_match(line, results, r_height)) {
       height = std::stoi(results[1].str());
@@ -47,7 +45,7 @@ Graph::Graph(const std::string &filename) : V(Vertices()), width(0), height(0)
 
   // create vertices
   int y = 0;
-  while (getline(file, line)) {
+  while (getline(map_stream, line)) {
     // for CRLF coding
     if (*(line.end() - 1) == 0x0d) line.pop_back();
     for (int x = 0; x < width; ++x) {
@@ -60,7 +58,6 @@ Graph::Graph(const std::string &filename) : V(Vertices()), width(0), height(0)
     }
     ++y;
   }
-  file.close();
 
   // create edges
   for (int y = 0; y < height; ++y) {

@@ -11,10 +11,10 @@ Instance::Instance(Graph *_G, const Config &_starts, const Config &_goals,
 {
 }
 
-Instance::Instance(const std::string &map_filename,
+Instance::Instance(const std::string &map_content,
                    const std::vector<int> &start_indexes,
                    const std::vector<int> &goal_indexes)
-    : G(new Graph(map_filename)),
+    : G(new Graph(map_content)),
       starts(Config()),
       goals(Config()),
       N(start_indexes.size()),
@@ -28,26 +28,23 @@ Instance::Instance(const std::string &map_filename,
 static const std::regex r_instance =
     std::regex(R"(\d+\t.+\.map\t\d+\t\d+\t(\d+)\t(\d+)\t(\d+)\t(\d+)\t.+)");
 
-Instance::Instance(const std::string &scen_filename,
-                   const std::string &map_filename, const int _N)
-    : G(new Graph(map_filename)),
+Instance::Instance(const std::string &scen_content, const std::string &map_content, const int _N)
+    : G(new Graph(map_content)), 
       starts(Config()),
       goals(Config()),
       N(_N),
       delete_graph_after_used(true)
 {
   // load start-goal pairs
-  std::ifstream file(scen_filename);
-  if (!file) {
-    info(0, 0, scen_filename, " is not found");
-    return;
-  }
+  std::istringstream scen_stream(scen_content);
   std::string line;
   std::smatch results;
 
-  while (getline(file, line)) {
+  while (getline(scen_stream, line)) {
     // for CRLF coding
-    if (*(line.end() - 1) == 0x0d) line.pop_back();
+    if (!line.empty() && line.back() == '\r') {
+        line.pop_back();
+    }
 
     if (std::regex_match(line, results, r_instance)) {
       auto x_s = std::stoi(results[1].str());
@@ -67,9 +64,9 @@ Instance::Instance(const std::string &scen_filename,
   }
 }
 
-Instance::Instance(const std::string &map_filename, const int _N,
+Instance::Instance(const std::string &map_content, const int _N,
                    const int seed)
-    : G(new Graph(map_filename)),
+    : G(new Graph(map_content)),
       starts(Config()),
       goals(Config()),
       N(_N),

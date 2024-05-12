@@ -15,14 +15,14 @@ struct Instance {
   bool delete_graph_after_used;
 
   Instance(Graph *_G, const Config &_starts, const Config &_goals, uint _N);
-  Instance(const std::string &map_filename,
+  Instance(const std::string &map_content,
            const std::vector<int> &start_indexes,
            const std::vector<int> &goal_indexes);
   // for MAPF benchmark
-  Instance(const std::string &scen_filename, const std::string &map_filename,
+  Instance(const std::string &scen_content, const std::string &map_content, 
            const int _N = 1);
   // random instance generation
-  Instance(const std::string &map_filename, const int _N = 1,
+  Instance(const std::string &map_content, const int _N = 1, 
            const int seed = 0);
   ~Instance();
 
