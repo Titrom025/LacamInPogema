@@ -2,16 +2,13 @@
 #include <lacam.hpp>
 
 extern "C" {
-    int run_lacam(const char* map_content_cstr, const char* scene_content_cstr, 
-                  const char* output_name_cstr, int N);
+    const char* run_lacam(const char* map_content_cstr, const char* scene_content_cstr, int N);
 }
 
-int run_lacam(const char* map_content_cstr, const char* scene_content_cstr, 
-              const char* output_name_cstr, int N)
+const char* run_lacam(const char* map_content_cstr, const char* scene_content_cstr, int N)
 {
   std::string map_content(map_content_cstr);
   std::string scene_content(scene_content_cstr);
-  std::string output_name(output_name_cstr);
 
 //   const int N = std::stoi("1");
   const int seed = 0;
@@ -37,10 +34,8 @@ int run_lacam(const char* map_content_cstr, const char* scene_content_cstr,
   const int checkpoints_duration = 5000;
 
   // setup instance
-//   const auto ins = scene_name.size() > 0 ? Instance(scene_content, map_content, N)
-//                                         : Instance(map_content, N, seed);
   const auto ins = Instance(scene_content, map_content, N);
-  if (!ins.is_valid(1)) return 1;
+  if (!ins.is_valid(1)) return "ERROR";
 
   // solver parameters
   Planner::FLG_SWAP = !flg_no_swap && !flg_no_all;
@@ -69,19 +64,34 @@ int run_lacam(const char* map_content_cstr, const char* scene_content_cstr,
   // check feasibility
   if (!is_feasible_solution(ins, solution, verbose)) {
     info(0, verbose, &deadline, "invalid solution");
-    return 1;
+    return "ERROR";
   }
 
   // post processing
   print_stats(verbose, &deadline, ins, solution, comp_time_ms);
-  make_log(ins, solution, output_name, comp_time_ms, "tmp_map", seed, log_short);
-  return 0;
+  make_log(ins, solution, "lacam_log.txt", comp_time_ms, "tmp_map", seed, log_short);
+
+  auto get_x = [&](int k) { return k % ins.G->width; };
+  auto get_y = [&](int k) { return k / ins.G->width; };
+
+  std::ostringstream result_string;
+  for (size_t t = 0; t < solution.size(); ++t) {
+      auto C = solution[t];
+      for (auto v : C) {
+          result_string << get_x(v->index) << "," << get_y(v->index) << "|";
+      }
+      result_string << "\n";
+  }
+
+  static std::string result;
+  result = result_string.str();
+
+  return result.c_str();
 }
 
 int main(int argc, char *argv[]) {
     const char* map_name = "tmp.map";
     const char* scene_name = "tmp.scene";
-    const char* output_name = "tmp_results.txt";
     const int N = 1;
 
     std::string map_content;
@@ -112,6 +122,8 @@ int main(int argc, char *argv[]) {
     const char* map_content_cstr = map_content.c_str();
     const char* scene_content_cstr = scene_content.c_str();
 
-    return run_lacam(map_content_cstr, scene_content_cstr, output_name, N);
+    const char* result = run_lacam(map_content_cstr, scene_content_cstr, N);
+    std::cout << result << std::endl;
+    return 0;
 }
 

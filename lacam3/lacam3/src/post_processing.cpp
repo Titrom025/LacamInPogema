@@ -105,7 +105,7 @@ void make_log(const Instance &ins, const Solution &solution,
       << "\n";
   log << "comp_time=" << comp_time_ms << "\n";
   log << "seed=" << seed << "\n";
-  log << Planner::MSG << "\n";
+  // log << Planner::MSG << "\n";
   if (log_short) return;
   log << "starts=";
   for (size_t i = 0; i < ins.N; ++i) {
