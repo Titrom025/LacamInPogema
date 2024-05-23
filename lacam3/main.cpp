@@ -2,18 +2,18 @@
 #include <lacam.hpp>
 
 extern "C" {
-    const char* run_lacam(const char* map_content_cstr, const char* scene_content_cstr, int N);
+    const char* run_lacam(const char* map_content_cstr, const char* scene_content_cstr,
+                          int N, float time_limit_sec);
 }
 
-const char* run_lacam(const char* map_content_cstr, const char* scene_content_cstr, int N)
+const char* run_lacam(const char* map_content_cstr, const char* scene_content_cstr,
+                      int N, float time_limit_sec)
 {
   std::string map_content(map_content_cstr);
   std::string scene_content(scene_content_cstr);
 
-//   const int N = std::stoi("1");
   const int seed = 0;
   const int verbose = 0;
-  const int time_limit_sec = 3;
   const bool log_short = false;
 
   // Solver parameters
@@ -35,7 +35,7 @@ const char* run_lacam(const char* map_content_cstr, const char* scene_content_cs
 
   // setup instance
   const auto ins = Instance(scene_content, map_content, N);
-  if (!ins.is_valid(1)) return "ERROR";
+  if (!ins.is_valid(1)) return "ERROR_SCENE";
 
   // solver parameters
   Planner::FLG_SWAP = !flg_no_swap && !flg_no_all;
@@ -59,12 +59,15 @@ const char* run_lacam(const char* map_content_cstr, const char* scene_content_cs
   const auto comp_time_ms = deadline.elapsed_ms();
 
   // failure
-  if (solution.empty()) info(1, verbose, &deadline, "failed to solve");
+  if (solution.empty()) {
+    info(1, verbose, &deadline, "failed to solve");
+    return "ERROR_EMPTY";
+  }
 
   // check feasibility
   if (!is_feasible_solution(ins, solution, verbose)) {
     info(0, verbose, &deadline, "invalid solution");
-    return "ERROR";
+    return "ERROR_SOLUTION";
   }
 
   // post processing
@@ -93,6 +96,7 @@ int main(int argc, char *argv[]) {
     const char* map_name = "tmp.map";
     const char* scene_name = "tmp.scene";
     const int N = 1;
+    const float time_limit_sec = 1.0;
 
     std::string map_content;
     std::string scene_content;
@@ -122,7 +126,7 @@ int main(int argc, char *argv[]) {
     const char* map_content_cstr = map_content.c_str();
     const char* scene_content_cstr = scene_content.c_str();
 
-    const char* result = run_lacam(map_content_cstr, scene_content_cstr, N);
+    const char* result = run_lacam(map_content_cstr, scene_content_cstr, N, time_limit_sec);
     std::cout << result << std::endl;
     return 0;
 }
